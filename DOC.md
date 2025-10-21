@@ -1,5 +1,11 @@
 ### postgresql commands for
 
+### login postgres 
+
+Login after fresh install - default user and database
+
+`psql -U postgres -d postgres`
+
 #### Linux (ubuntu)
 `sudo -u postgres createuser --interactive`
 
