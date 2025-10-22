@@ -27,7 +27,7 @@ async def login(
 
     # Used 'user_in_db.user_role.value' to get the actual string value from the Enum
     token_data = {
-        'user_admin': user.user_is_admin,
+        'user_is_admin': user.user_is_admin,
         'user_id' : user.user_id,
         'user_data' : user.user_data
     }

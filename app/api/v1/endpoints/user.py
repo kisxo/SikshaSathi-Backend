@@ -50,7 +50,7 @@ async def list_users(
     payload: TokenPayload = Depends(authx_security.access_token_required)
 ):
 
-    if not payload.user_admin:
+    if not payload.user_is_admin:
         raise HTTPException(status_code=400, detail="Does not have permission to get user!")
 
     users = user_service.list_users(session=session)
