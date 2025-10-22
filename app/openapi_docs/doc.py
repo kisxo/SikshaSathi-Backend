@@ -1,4 +1,4 @@
-title = "Anganwadi management backend API - AsyncMind"
+title = "Siksha Sathi backend API - AsyncMind"
 
 summary = "This is the documentation of Fastapi API developed by Uday Subba."
 
@@ -21,7 +21,7 @@ tags_metadata = [
             Example JSON request with authentication headers: Let the say the `JWT-Token = eyJhbGciOiJSUzI1.....`
     
         {
-            "url": "https://magicminute.online/api/v1/students",
+            "url": "https://sikshasathi.nebd.in/api/v1/users/1",
             "method": "POST",
             "headers": {
                 "Authorization": "Bearer eyJhbGciOiJSUzI1.....",
