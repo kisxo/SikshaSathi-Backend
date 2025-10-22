@@ -2,18 +2,7 @@ import logging
 from app.db.database import engine, create_db_and_tables
 from sqlalchemy import text
 import os
-from app.db.models import (
-    admin_model,
-    anganwadi_model,
-    beneficiary_model,
-    daily_tracking_model,
-    officer_model,
-    ration_model,
-    staff_attendance_model,
-    staff_model,
-    student_attendance_model,
-    student_model,
-)
+
 logger = logging.getLogger('uvicorn.error')
 
 # Function to run during server start up.
