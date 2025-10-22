@@ -12,18 +12,18 @@ from app.core.security import verify_password, hash_password
 from sqlalchemy import select
 from pathlib import Path
 from app.db.models import user_model
-from app.services.user_service import get_user_by_email
+from app.services import user_service
 
 router = APIRouter()
 
-@router.post("/users",
+@router.post("/",
     response_model=UserPublic
 )
-async def create_users(
+async def create_user(
     input_data: UserCreate,
     session: SessionDep
 ):
-    user = get_user_by_email(input_data.user_email, session)
+    user = user_service.get_user_by_email(input_data.user_email, session)
     if user:
         raise HTTPException(status_code=400, detail="Email Already exists!")
 
@@ -44,3 +44,21 @@ async def create_users(
         raise HTTPException(status_code=400, detail="Something went wrong!")
 
     return new_user
+
+
+@router.get("/{user_id}",
+    response_model = UserPublic,
+    # dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)]
+)
+async def get_user(
+    user_id: int,
+    session: SessionDep,
+    # payload: TokenPayload = Depends(authx_security.access_token_required)
+):
+    user = user_service.get_user(user_id=user_id, session=session)
+
+    if not user:
+        # Return 404 if not found
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
