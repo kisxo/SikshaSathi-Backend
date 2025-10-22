@@ -7,9 +7,7 @@ from app.core.security import verify_password
 from sqlalchemy import select
 from app.core.config import settings
 from urllib.parse import urlencode
-import httpx
-from google.oauth2 import id_token
-from google.auth.transport import requests
+from app.services.google_account_service import exchange_code_for_tokens, verify_id_token, save_oauth_tokens
 
 router = APIRouter()
 
@@ -63,53 +61,20 @@ async def login_with_google(
 
 
 @router.get("/google/callback")
-def google_callback(code: str):
-    token_url = "https://oauth2.googleapis.com/token"
-    data = {
-        "code": code,
-        "client_id": settings.GOOGLE_CLIENT_ID,
-        "client_secret": settings.GOOGLE_CLIENT_SECRET,
-        "redirect_uri": settings.REDIRECT_URI,
-        "grant_type": "authorization_code"
-    }
+async def google_callback(
+    code: str,
+    session: SessionDep
+):
+    # Exchange code for tokens
+    tokens = exchange_code_for_tokens(code)
 
-    # Exchange authorization code for tokens
-    response = httpx.post(token_url, data=data)
-    if response.status_code != 200:
-        print(response.json())
-        raise HTTPException(status_code=400, detail="Failed to fetch tokens from Google")
+    # Verify ID token to get Google user info
+    google_user_info = verify_id_token(tokens.get("id_token"))
 
-    tokens = response.json()
-    id_token_str = tokens.get("id_token")
-
-    if not id_token_str:
-        raise HTTPException(status_code=400, detail="Missing ID token in Google response")
-
-    # Verify and decode ID token
-    try:
-        user_info = id_token.verify_oauth2_token(
-            id_token_str,
-            requests.Request(),
-            settings.GOOGLE_CLIENT_ID
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid ID token: {e}")
-
-    # Example user info you’ll get
-    # {
-    #   "sub": "110169484474386276334",
-    #   "email": "user@gmail.com",
-    #   "email_verified": True,
-    #   "name": "User Name",
-    #   "picture": "https://lh3.googleusercontent.com/a-/..."
-    # }
+    # Save OAuth tokens in DB
+    saved_account = save_oauth_tokens(google_user_info, tokens, session)
 
     return {
-        "user": {
-            "name": user_info.get("name"),
-            "email": user_info.get("email"),
-            "picture": user_info.get("picture"),
-            "sub": user_info.get("sub")
-        },
-        "tokens": tokens
+        "message": "Google OAuth tokens saved successfully",
+        "google_account": saved_account
     }

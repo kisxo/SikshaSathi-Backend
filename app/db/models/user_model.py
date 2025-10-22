@@ -2,6 +2,7 @@ from __future__ import annotations
 from sqlalchemy import String, TIMESTAMP, func, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
+from typing import Optional
 
 
 class User(Base):
@@ -24,4 +25,9 @@ class User(Base):
         back_populates="user",
         uselist=False,
         cascade="all, delete-orphan"
+    )
+
+    # One-to-one relationship with GoogleAccount
+    google_account: Mapped[Optional["GoogleAccount"]] = relationship(
+        "GoogleAccount", uselist=False, back_populates="user"
     )
