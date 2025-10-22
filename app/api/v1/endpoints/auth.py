@@ -8,18 +8,19 @@ from sqlalchemy import select
 from app.core.config import settings
 from urllib.parse import urlencode
 from app.services.google_account_service import exchange_code_for_tokens, verify_id_token, save_oauth_tokens
+from fastapi.responses import RedirectResponse
 
 router = APIRouter()
 
 
 @router.post("/token",
-    response_model=Token
-)
+             response_model=Token
+             )
 async def login(
-    input_data: LoginForm,
-    session: SessionDep
+        input_data: LoginForm,
+        session: SessionDep
 ):
-    statement = select(User).where(User.user_email== input_data.email)
+    statement = select(User).where(User.user_email == input_data.email)
     user = session.execute(statement).scalar_one_or_none()
 
     if user is None:
@@ -31,8 +32,8 @@ async def login(
     # Used 'user_in_db.user_role.value' to get the actual string value from the Enum
     token_data = {
         'user_is_admin': user.user_is_admin,
-        'user_id' : user.user_id,
-        'user_data' : user.user_data
+        'user_id': user.user_id,
+        'user_data': user.user_data
     }
 
     token = authx_security.create_access_token(uid=str(user.user_id), data=token_data)
@@ -40,14 +41,12 @@ async def login(
     return {"access_token": token}
 
 
-
 @router.get("/google",
-    # response_model=Token
-)
+            # response_model=Token
+            )
 async def login_with_google(
-    session: SessionDep
+        session: SessionDep
 ):
-
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
         "redirect_uri": settings.REDIRECT_URI,
@@ -57,13 +56,14 @@ async def login_with_google(
         "prompt": "consent"
     }
     url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
-    return url
+
+    return RedirectResponse(url)
 
 
 @router.get("/google/callback")
 async def google_callback(
-    code: str,
-    session: SessionDep
+        code: str,
+        session: SessionDep
 ):
     # Exchange code for tokens
     tokens = exchange_code_for_tokens(code)

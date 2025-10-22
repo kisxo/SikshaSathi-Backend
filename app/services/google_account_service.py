@@ -21,17 +21,18 @@ def save_oauth_tokens(google_user_info: dict, tokens: dict, session: SessionDep)
     if not user_in_db:
         raise HTTPException(status_code=403, detail="Google account email does not match any account")
 
+    print(user_in_db)
     expires_in = tokens.get("expires_in", 3600)
 
     try:
         # Check if GoogleAccount already exists for this user
-        statement = select(GoogleAccount).where(GoogleAccount.user_id == user_in_db.user_id)
+        statement = select(GoogleAccount).where(GoogleAccount.user_id == user_in_db.get("user_id"))
         google_account = session.execute(statement).scalar_one_or_none()
 
         if not google_account:
             # Create new record
             google_account = GoogleAccount(
-                user_id=user_in_db.user_id,
+                user_id=user_in_db.get("user_id"),
                 google_email=google_email,
                 access_token=tokens["access_token"],
                 refresh_token=tokens.get("refresh_token"),
@@ -54,7 +55,7 @@ def save_oauth_tokens(google_user_info: dict, tokens: dict, session: SessionDep)
 
 
 
-def exchange_code_for_tokens(code: str) -> dict:
+def exchange_code_for_tokens(code: str):
     """
     Exchange authorization code for access and refresh tokens.
     """
@@ -68,13 +69,13 @@ def exchange_code_for_tokens(code: str) -> dict:
 
     response = httpx.post(settings.GOOGLE_TOKEN_URI, data=data)
     if response.status_code != 200:
-        raise Exception(f"Failed to fetch tokens: {response.json()}")
+        raise HTTPException(status_code=500, detail="Failed to get Google OAuth tokens")
 
     return response.json()
 
 
 
-def verify_id_token(id_token_str: str) -> dict:
+def verify_id_token(id_token_str: str):
     """
     Verify ID token and extract user info.
     """
