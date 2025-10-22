@@ -9,6 +9,14 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int
     POSTGRES_DB: str
 
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_PROJECT_ID: str
+    GOOGLE_AUTH_URI: str
+    GOOGLE_TOKEN_URI: str
+    GOOGLE_AUTH_PROVIDER_X509_CERT_URL: str
+    GOOGLE_CLIENT_SECRET: str
+    REDIRECT_URI: str
+
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         return f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
