@@ -8,7 +8,8 @@ from sqlalchemy import select
 from app.core.config import settings
 from urllib.parse import urlencode
 import httpx
-from jose import jwt
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 router = APIRouter()
 
@@ -61,7 +62,7 @@ async def login_with_google(
     return url
 
 
-@router.get("/auth/google/callback")
+@router.get("/google/callback")
 def google_callback(code: str):
     token_url = "https://oauth2.googleapis.com/token"
     data = {
@@ -71,11 +72,44 @@ def google_callback(code: str):
         "redirect_uri": settings.REDIRECT_URI,
         "grant_type": "authorization_code"
     }
+
+    # Exchange authorization code for tokens
     response = httpx.post(token_url, data=data)
+    if response.status_code != 200:
+        print(response.json())
+        raise HTTPException(status_code=400, detail="Failed to fetch tokens from Google")
+
     tokens = response.json()
+    id_token_str = tokens.get("id_token")
 
-    id_token = tokens.get("id_token")
-    user_info = jwt.decode(id_token, options={"verify_signature": False})
+    if not id_token_str:
+        raise HTTPException(status_code=400, detail="Missing ID token in Google response")
 
-    # user_info contains name, email, sub (Google user ID), picture
-    return {"user": user_info, "tokens": tokens}
+    # Verify and decode ID token
+    try:
+        user_info = id_token.verify_oauth2_token(
+            id_token_str,
+            requests.Request(),
+            settings.GOOGLE_CLIENT_ID
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid ID token: {e}")
+
+    # Example user info you’ll get
+    # {
+    #   "sub": "110169484474386276334",
+    #   "email": "user@gmail.com",
+    #   "email_verified": True,
+    #   "name": "User Name",
+    #   "picture": "https://lh3.googleusercontent.com/a-/..."
+    # }
+
+    return {
+        "user": {
+            "name": user_info.get("name"),
+            "email": user_info.get("email"),
+            "picture": user_info.get("picture"),
+            "sub": user_info.get("sub")
+        },
+        "tokens": tokens
+    }
