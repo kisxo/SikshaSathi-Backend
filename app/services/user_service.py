@@ -2,21 +2,19 @@ from app.db.models.staff_model import Staff
 from app.db.session import SessionDep
 from fastapi import HTTPException
 from sqlalchemy import select
+from app.db.models.user_model import User
 
 
-
-
-def get_staff(staff_id: int, session: SessionDep):
-    staff_in_db = None
+def get_user_by_email(email: str, session: SessionDep):
     try:
-        staff_in_db = session.get(Staff, staff_id)
+        statement = select(User).where(User.user_email == email)
+        user_in_db = session.execute(statement).scalar_one_or_none()
+        if user_in_db:
+            return user_in_db.__dict__
+        return None
     except Exception as e:
-        print(e)
-
-    if not staff_in_db:
-        raise HTTPException(status_code=404, detail="Staff not found!")
-
-    return staff_in_db
+        print("Error fetching user by email:", e)
+        return None
 
 
 def list_staffs(session: SessionDep):

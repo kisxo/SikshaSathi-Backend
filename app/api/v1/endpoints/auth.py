@@ -1,3 +1,5 @@
+from http.client import responses
+
 from fastapi import APIRouter, HTTPException
 from app.core.security import authx_security
 from app.db.schemas.auth import Token
@@ -10,6 +12,7 @@ from app.core.security import verify_password, hash_password
 from sqlalchemy import select
 from pathlib import Path
 from app.db.models import user_model
+from app.services.user_service import get_user_by_email
 
 router = APIRouter()
 
@@ -20,6 +23,10 @@ async def create_users(
     input_data: UserCreate,
     session: SessionDep
 ):
+    user = get_user_by_email(input_data.user_email, session)
+    if user:
+        raise HTTPException(status_code=400, detail="Email Already exists!")
+
     try:
 
         validated_user = User(
