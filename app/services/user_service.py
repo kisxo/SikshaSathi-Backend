@@ -1,4 +1,3 @@
-from app.db.models.staff_model import Staff
 from app.db.session import SessionDep
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -31,26 +30,14 @@ def get_user_by_email(email: EmailStr, session: SessionDep):
         return None
 
 
-def list_staffs(session: SessionDep):
+def list_users(session: SessionDep):
     try:
-        statement = select(Staff)
+        statement = select(User)
         result =  session.execute(statement).mappings().all()
-        staffs = []
+        users = []
         for row in result:
-            staffs.append(row.Staff.__dict__)
+            users.append(row.User.__dict__)
 
-        return staffs
-    except Exception as e:
-        print(e)
-
-def list_staffs_by_center(center_id: int, session: SessionDep):
-    try:
-        statement = select(Staff).where(Staff.staff_center_id == center_id)
-        result =  session.execute(statement).mappings().all()
-        staffs = []
-        for row in result:
-            staffs.append(row.Staff.__dict__)
-
-        return staffs
+        return users
     except Exception as e:
         print(e)

@@ -1,8 +1,4 @@
-import enum
 from pydantic import BaseModel, Field, EmailStr
-from pydantic.types import datetime, date
-from typing import Optional
-from pydantic.types import Json
 
 
 class UserBase(BaseModel):
@@ -12,6 +8,8 @@ class UserBase(BaseModel):
 
 class UserPublic(UserBase):
     user_id: int
+    user_is_admin: bool
+    user_data: bool
 
 class UsersPublic(BaseModel):
     data: list[UserPublic]

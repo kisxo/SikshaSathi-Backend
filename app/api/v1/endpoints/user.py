@@ -1,16 +1,9 @@
-from http.client import responses
-
-from fastapi import APIRouter, HTTPException
-from app.core.security import authx_security
-from app.db.schemas.auth import Token
+from fastapi import APIRouter, HTTPException, Depends
+from app.core.security import authx_security, auth_scheme
+from authx import TokenPayload
 from app.db.session import SessionDep
-from app.db.models.staff_model import Staff
-from app.db.models.officer_model import Officer
-from app.db.models.admin_model import Admin
-from app.db.schemas.user import UserBase, User, UserCreate, UserPublic
-from app.core.security import verify_password, hash_password
-from sqlalchemy import select
-from pathlib import Path
+from app.db.schemas.user import User, UserCreate, UserPublic, UsersPublic
+from app.core.security import hash_password
 from app.db.models import user_model
 from app.services import user_service
 
@@ -46,15 +39,62 @@ async def create_user(
     return new_user
 
 
+
+
+@router.get("/",
+    response_model = UsersPublic,
+    dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)]
+)
+async def list_users(
+    session: SessionDep,
+    payload: TokenPayload = Depends(authx_security.access_token_required)
+):
+
+    if not payload.user_admin:
+        raise HTTPException(status_code=400, detail="Does not have permission to get user!")
+
+    users = user_service.list_users(session=session)
+
+    if not users:
+        # Return 404 if not found
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {'data': users}
+
+
+
+@router.get("/self",
+    response_model = UserPublic,
+    dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)]
+)
+async def get_my_account(
+    session: SessionDep,
+    payload: TokenPayload = Depends(authx_security.access_token_required)
+):
+
+    user = user_service.get_user(user_id=payload.user_id, session=session)
+
+    if not user:
+        # Return 404 if not found
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
+
+
+
 @router.get("/{user_id}",
     response_model = UserPublic,
-    # dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)]
+    dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)]
 )
 async def get_user(
     user_id: int,
     session: SessionDep,
-    # payload: TokenPayload = Depends(authx_security.access_token_required)
+    payload: TokenPayload = Depends(authx_security.access_token_required)
 ):
+
+    if not payload.user_admin:
+        raise HTTPException(status_code=400, detail="Does not have permission to get user!")
+
     user = user_service.get_user(user_id=user_id, session=session)
 
     if not user:
