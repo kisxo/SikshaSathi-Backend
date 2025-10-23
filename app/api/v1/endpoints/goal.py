@@ -7,6 +7,7 @@ from app.core.security import authx_security, auth_scheme
 from app.services import mail_service, user_service
 from app.db.models import goal_model
 from app.db.schemas.goal import GoalGenerationForm, GoalCreate
+from app.services import goal_service
 
 from groq import Groq
 
@@ -98,3 +99,21 @@ async def generate_goal(
         raise HTTPException(status_code=400, detail="Something went wrong!")
 
     return new_goal
+
+
+
+
+@router.post("/my-goals",
+    dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
+)
+async def generate_goal(
+        input_data: GoalGenerationForm,
+        session: SessionDep,
+        payload: TokenPayload = Depends(authx_security.access_token_required),
+):
+    goals = goal_service.list_user_goals(payload.user_id, session=session)
+    if not goals:
+        # Return 404 if not found
+        raise HTTPException(status_code=404, detail="Goals not found")
+
+    return {'data': goals}

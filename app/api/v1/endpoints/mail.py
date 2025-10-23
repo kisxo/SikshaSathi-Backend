@@ -7,6 +7,11 @@ from app.services.google_account_service import fetch_user_gmail_messages, get_u
 from app.services.google_account_service import get_valid_google_access_token
 from app.services import mail_service, user_service
 
+
+from fastapi.responses import StreamingResponse
+import asyncio
+import datetime
+
 router = APIRouter()
 
 @router.get(
@@ -135,7 +140,6 @@ async def gmail_webhook(
 async def get_user_gmail_messages(
     session: SessionDep,
     message_id: str,
-    max_results: int = Query(10, description="Number of emails to fetch"),
     payload: TokenPayload = Depends(authx_security.access_token_required),
 ):
 
@@ -147,3 +151,16 @@ async def get_user_gmail_messages(
     message = mail_service.fetch_gmail_message(google_access_token, message_id)
 
     return message
+
+
+async def event_generator():
+    n = 0
+    while n < 5:
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        yield f"data: Current time is {current_time}\n\n"
+        n+=1
+        await asyncio.sleep(1)  # Send update every second
+
+@router.get("/stream_time")
+async def stream_time():
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
