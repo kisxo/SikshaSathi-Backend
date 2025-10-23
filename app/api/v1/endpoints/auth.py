@@ -51,9 +51,9 @@ async def login_with_google(
         "client_id": settings.GOOGLE_CLIENT_ID,
         "redirect_uri": settings.REDIRECT_URI,
         "response_type": "code",
-        "scope": "openid email profile",
-        "access_type": "offline",
-        "prompt": "consent"
+        "scope": "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify",
+        "access_type": "offline",  # ensures you get a refresh_token
+        "prompt": "consent"  # ensures user re-consents if already authorized
     }
     url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
 
