@@ -1,9 +1,9 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 from sqlalchemy import select, func
 from app.db.session import SessionDep
 from app.db.models.google_account_model import GoogleAccount
-from app.services.user_service import get_user_by_email
+from app.services.user_service import get_user_by_email, get_user
 import httpx
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -88,3 +88,87 @@ def verify_id_token(id_token_str: str):
         return user_info
     except ValueError as e:
         raise Exception(f"Invalid ID token: {e}")
+
+
+def get_user_google_account(user_id: int, session: SessionDep):
+    """
+    Retrieve the Google account record for the currently logged-in user.
+    """
+    statement = select(GoogleAccount).where(GoogleAccount.user_id == user_id)
+    account = session.execute(statement).scalar_one_or_none()
+    return account
+
+
+
+def fetch_user_gmail_messages(user_id: int, session: SessionDep, max_results: int = 10):
+    """
+    Fetch Gmail messages using an always-valid token.
+    """
+
+    user = get_user(user_id, session)
+    access_token = get_valid_google_access_token(user.user_id, session)
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    gmail_api_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages"
+    params = {"maxResults": max_results}
+
+    response = httpx.get(gmail_api_url, headers=headers, params=params, timeout=10.0)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+
+    return response.json()
+
+
+
+def get_valid_google_access_token(user_id: int, session: SessionDep) -> str:
+    """
+    Ensure the Google access token for a user is valid.
+    If expired or near expiry, refresh it automatically.
+    Returns a valid access token string.
+    """
+    statement = select(GoogleAccount).where(GoogleAccount.user_id == user_id)
+    google_account = session.execute(statement).scalar_one_or_none()
+
+    if not google_account:
+        raise HTTPException(status_code=404, detail="Google account not linked")
+
+    # Check expiry (with 1 minute grace)
+    now = datetime.now(timezone.utc)
+    if google_account.token_expiry and google_account.token_expiry > now + timedelta(minutes=1):
+        return google_account.access_token  # still valid
+
+    # Otherwise refresh using refresh_token
+    if not google_account.refresh_token:
+        raise HTTPException(status_code=401, detail="Missing refresh token. Please re-link Google account.")
+
+    token_url = "https://oauth2.googleapis.com/token"
+    payload = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+        "refresh_token": google_account.refresh_token,
+        "grant_type": "refresh_token",
+    }
+
+    try:
+        response = httpx.post(token_url, data=payload, timeout=10.0)
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail=f"Failed to refresh token: {response.text}")
+
+        new_tokens = response.json()
+        access_token = new_tokens.get("access_token")
+        expires_in = new_tokens.get("expires_in", 3600)
+
+        if not access_token:
+            raise HTTPException(status_code=400, detail="No access token returned by Google")
+
+        # Update DB with new token + expiry
+        google_account.access_token = access_token
+        google_account.token_expiry = func.now() + timedelta(seconds=expires_in)
+        session.commit()
+
+        return access_token
+
+    except Exception as e:
+        print("Error refreshing Google token:", e)
+        session.rollback()
+        raise HTTPException(status_code=500, detail="Failed to refresh Google access token")
