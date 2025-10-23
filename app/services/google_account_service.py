@@ -100,13 +100,10 @@ def get_user_google_account(user_id: int, session: SessionDep):
 
 
 
-def fetch_user_gmail_messages(user_id: int, session: SessionDep, max_results: int = 10):
+def fetch_user_gmail_messages(access_token: str, max_results: int = 10):
     """
     Fetch Gmail messages using an always-valid token.
     """
-
-    user = get_user(user_id, session)
-    access_token = get_valid_google_access_token(user.user_id, session)
 
     headers = {"Authorization": f"Bearer {access_token}"}
     gmail_api_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages"
@@ -132,9 +129,15 @@ def get_valid_google_access_token(user_id: int, session: SessionDep) -> str:
     if not google_account:
         raise HTTPException(status_code=404, detail="Google account not linked")
 
-    # Check expiry (with 1 minute grace)
     now = datetime.now(timezone.utc)
-    if google_account.token_expiry and google_account.token_expiry > now + timedelta(minutes=1):
+
+    # Normalize DB-stored expiry to UTC-aware datetime
+    token_expiry = google_account.token_expiry
+    if token_expiry and token_expiry.tzinfo is None:
+        token_expiry = token_expiry.replace(tzinfo=timezone.utc)
+
+    # Check expiry (with 1 minute grace)
+    if token_expiry and token_expiry > now + timedelta(minutes=1):
         return google_account.access_token  # still valid
 
     # Otherwise refresh using refresh_token
@@ -172,3 +175,12 @@ def get_valid_google_access_token(user_id: int, session: SessionDep) -> str:
         print("Error refreshing Google token:", e)
         session.rollback()
         raise HTTPException(status_code=500, detail="Failed to refresh Google access token")
+
+
+
+def get_gmail_message(access_token: str, message_id: str):
+    url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    params = {"format": "metadata", "metadataHeaders": ["From", "Subject", "Date"]}
+    response = httpx.get(url, headers=headers, params=params)
+    return response.json()
