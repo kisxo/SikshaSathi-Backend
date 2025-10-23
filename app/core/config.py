@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int
     POSTGRES_DB: str
 
+    GEMINI_API: str
+    GROQ_API: str
+
     GOOGLE_CLIENT_ID: str
     GOOGLE_PROJECT_ID: str
     GOOGLE_AUTH_URI: str

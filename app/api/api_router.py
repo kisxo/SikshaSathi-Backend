@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, user, profile, mail
+from app.api.v1.endpoints import auth, user, profile, mail, ai, goal
 
 router = APIRouter()
 
@@ -8,7 +8,8 @@ router.include_router(auth.router, prefix="/v1/auth", tags=["Authentication"])
 router.include_router(user.router, prefix="/v1/users", tags=["User"])
 router.include_router(profile.router, prefix="/v1/profiles", tags=["Profile"])
 router.include_router(mail.router, prefix="/v1/mails", tags=["Mail"])
-# router.include_router(officer.router, prefix="/v1/officers", tags=["Officers"])
+# router.include_router(ai.router, prefix="/v1/ai", tags=["Ai"])
+router.include_router(goal.router, prefix="/v1/goals", tags=["Goal"])
 # router.include_router(staff.router, prefix="/v1/staffs", tags=["Staffs"])
 # router.include_router(student.router, prefix="/v1/students", tags=["Students"])
 # router.include_router(beneficiary.router, prefix="/v1/beneficiaries", tags=["Beneficiaries"])
