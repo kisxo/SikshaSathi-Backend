@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Annotated
 from authx import TokenPayload
+from typing import Optional
 
 from app.db.session import SessionDep
 from app.core.security import authx_security, auth_scheme
@@ -49,13 +50,13 @@ async def create_profile(
     dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
 )
 async def get_profile_by_user_id(
-    user_id: int,
     session: SessionDep,
+    user_id: int,
     payload: TokenPayload = Depends(authx_security.access_token_required),
 ):
 
     if not payload.user_is_admin:
-        raise HTTPException(status_code=400, detail="Does not have permission to get profile!")
+        user_id = payload.user_id
 
     profile = profile_service.get_profile_by_user_id(user_id, session)
     if not profile:
