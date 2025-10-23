@@ -8,13 +8,13 @@ from app.services.google_account_service import fetch_user_gmail_messages
 router = APIRouter()
 
 @router.get(
-    "/mails/me",
+    "/me",
     dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
 )
 async def get_user_gmail_messages(
+    session: SessionDep,
     user_id: int,
     max_results: int = Query(10, description="Number of emails to fetch"),
-    session: SessionDep = Depends(),
     payload: TokenPayload = Depends(authx_security.access_token_required),
 ):
     """
