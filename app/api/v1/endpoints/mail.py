@@ -108,7 +108,7 @@ async def gmail_webhook(
 
         user = user_service.get_user_by_email(email_address, session)
         # Get valid (refreshed if needed) access token for this user
-        access_token = get_valid_google_access_token(user.user_id, session)
+        access_token = get_valid_google_access_token(user.get("user_id"), session)
         if not access_token:
             raise HTTPException(status_code=404, detail="No linked Google account found")
 
