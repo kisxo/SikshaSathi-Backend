@@ -112,15 +112,15 @@ async def gmail_webhook(
         if not access_token:
             raise HTTPException(status_code=404, detail="No linked Google account found")
 
-        # Fetch new emails added since last historyId
-        new_emails = fetch_user_gmail_messages(access_token, history_id)
+        # Fetch new emails
+        latest_message_id = mail_service.fetch_user_gmail_latest_message_id(access_token)
 
-        print("New emails fetched:", new_emails)
+        latest_mail = mail_service.fetch_gmail_message(access_token, latest_message_id)
+        print("New emails fetched:", latest_mail)
 
-        # 3️⃣ (Optional) store or process emails here
-        # e.g., save to database or send notification
+        mail_service.save_gmail(user.get("user_id"), latest_mail, session)
 
-        return {"success": True, "fetched": len(new_emails.get("history", []))}
+        return {"success": True}
 
     except Exception as e:
         print("Error in Gmail webhook:", e)

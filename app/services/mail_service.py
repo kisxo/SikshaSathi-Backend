@@ -1,6 +1,9 @@
 import httpx
 from fastapi import HTTPException
 import base64
+from app.db.models import Email_model
+from sqlalchemy.orm import Session
+import json
 
 def fetch_gmail_message(access_token: str, message_id: str):
     """
@@ -87,3 +90,53 @@ def start_gmail_watch(access_token: str, topic_name: str):
         response.raise_for_status()
 
     return response.json()
+
+
+
+def fetch_user_gmail_latest_message_id(access_token: str):
+    """
+    Fetch Gmail messages using an always-valid token.
+    """
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    gmail_api_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages"
+    params = {"maxResults": 1}
+
+    response = httpx.get(gmail_api_url, headers=headers, params=params, timeout=10.0)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+
+    data = response.json()
+    messages = data.get("messages", [])
+
+    if not messages:
+        return None  # no messages found
+
+    # Return the ID of the first message
+    return messages[0]["id"]
+
+
+
+def save_gmail(user_id: int, msg: dict, session: Session):
+    """
+    Save a Gmail message to the database.
+    `msg` should be a dict with keys: id, threadId, from, to, subject, date, body
+    """
+    try:
+        gmail_msg = Email_model.Email(
+            user_id=user_id,
+            message_id=msg["id"],
+            thread_id=msg.get("threadId"),
+            sender=msg.get("from"),
+            recipient=msg.get("to"),
+            subject=msg.get("subject"),
+            date=msg.get("date"),
+            body=msg.get("body"),
+            raw=json.dumps(msg)
+        )
+        session.add(gmail_msg)
+        session.commit()
+        return gmail_msg.__dict__
+    except Exception as e:
+        print("Error saving email:", e)
+        return None
