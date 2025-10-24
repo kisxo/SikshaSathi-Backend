@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from app.db.models import email_summary_model
 from app.db.schemas.EmailSummary import EmailSummary
-
+from app.services import prompt_service
 
 def list_summary_by_user_id(user_id: int, session: SessionDep):
     try:
@@ -19,8 +19,9 @@ def list_summary_by_user_id(user_id: int, session: SessionDep):
         print(e)
 
 
-def generate_mail_summary(email: dict):
-    system_prompt = "You are Siksha Sathi AI.Your task is to read an email and rewrite it in simple, clear English that even a small child can understand. Do not add introductions like 'Here's the summary' or 'This is what the email says'. Just output the simplified summary itself — nothing else. You naver reply in markdown format"
+def generate_mail_summary(email: dict, session: SessionDep):
+    result = prompt_service.get_prompt_by_name("email_summary", session)
+    system_prompt = result.content
 
     input_prompt = f" Simplify this raw email message: {email} "
 
