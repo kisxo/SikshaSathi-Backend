@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from app.core.security import authx_security
 from app.db.session import SessionDep
 from app.db.models.user_model import User
@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 from app.services.google_account_service import exchange_code_for_tokens, verify_id_token, save_oauth_tokens
 from fastapi.responses import RedirectResponse
 from fastapi.responses import HTMLResponse
+from app.services import mail_service
 
 router = APIRouter()
 
@@ -71,9 +72,16 @@ async def google_callback(
         google_user_info = verify_id_token(tokens.get("id_token"))
         saved_account = save_oauth_tokens(google_user_info, tokens, session)
 
+        try:
+            topic_name = "projects/sikshasathi/topics/gmail-notifications"
+            response = mail_service.start_gmail_watch(tokens["access_token"], topic_name)
+        except Exception as e:
+            print("Error starting Gmail watch:", e)
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to start Gmail watch")
+
         # Your Android deep link (change scheme/host as needed)
         deep_link = (
-            f"sikshasathi://"
+            f"sikshasathi://(tabs)/mail"
             # f"email={google_user_info.get('email')}"
             # f"&name={google_user_info.get('name')}"
         )
