@@ -8,7 +8,7 @@ from app.db.schemas.EmailSummary import EmailSummary
 
 def list_summary_by_user_id(user_id: int, session: SessionDep):
     try:
-        statement = select(EmailSummary).where(email_summary_model.EmailSummary.user_id == user_id)
+        statement = select(email_summary_model.EmailSummary).where(email_summary_model.EmailSummary.user_id == user_id)
         result =  session.execute(statement).all()
         summary_list = []
         for row in result:
