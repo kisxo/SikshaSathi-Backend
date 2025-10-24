@@ -17,3 +17,17 @@ def list_user_goals(user_id: int, session: SessionDep):
         return goals
     except Exception as e:
         print(e)
+
+
+
+def get_user_goal(goal_id: int, session: SessionDep):
+    goal_in_db = None
+    try:
+        goal_in_db = session.get(Goal, goal_id)
+    except Exception as e:
+        print(e)
+
+    if not goal_in_db:
+        raise HTTPException(status_code=404, detail="Goal not found!")
+
+    return goal_in_db

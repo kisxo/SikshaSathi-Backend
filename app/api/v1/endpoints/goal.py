@@ -103,11 +103,10 @@ async def generate_goal(
 
 
 
-@router.post("/my-goals",
+@router.get("/my-goals",
     dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
 )
 async def generate_goal(
-        input_data: GoalGenerationForm,
         session: SessionDep,
         payload: TokenPayload = Depends(authx_security.access_token_required),
 ):
@@ -117,3 +116,26 @@ async def generate_goal(
         raise HTTPException(status_code=404, detail="Goals not found")
 
     return {'data': goals}
+
+
+
+
+@router.get("/{goal_id}",
+    dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
+)
+async def generate_goal(
+        goal_id: int,
+        session: SessionDep,
+        payload: TokenPayload = Depends(authx_security.access_token_required),
+):
+
+    goal = goal_service.get_user_goal(goal_id, session=session)
+
+    if not goal:
+        # Return 404 if not found
+        raise HTTPException(status_code=404, detail="Goals not found")
+
+    if not payload.user_is_admin and goal.user_id != payload.user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
+
+    return {'data': goal}
