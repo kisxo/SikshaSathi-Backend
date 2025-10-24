@@ -6,6 +6,9 @@ from app.core.security import authx_security, auth_scheme
 from app.services.google_account_service import fetch_user_gmail_messages, get_user_google_account
 from app.services.google_account_service import get_valid_google_access_token
 from app.services import mail_service, user_service
+from app.db.models.email_summary_model import EmailSummary
+from app.services import EmailSummary_service
+from app.db.schemas.EmailSummary import EmailSummariesPublic
 
 
 
@@ -152,6 +155,31 @@ async def get_user_gmail_messages(
     message = mail_service.fetch_gmail_message(google_access_token, message_id)
 
     return message
+
+
+
+@router.get(
+    "/summary",
+    response_model = EmailSummariesPublic,
+    dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
+)
+async def get_user_gmail_messages(
+    session: SessionDep,
+    payload: TokenPayload = Depends(authx_security.access_token_required),
+):
+
+    google_access_token = get_valid_google_access_token(payload.user_id, session)
+
+    if not google_access_token:
+        raise HTTPException(status_code=404, detail="No linked Google account found")
+
+    summaries = EmailSummary_service.list_summary_by_user_id(payload.user_id, session)
+
+    if not summaries:
+        raise HTTPException(status_code=404, detail="No email summaries found for this user")
+
+    return {'data': summaries}
+
 
 
 async def event_generator():
