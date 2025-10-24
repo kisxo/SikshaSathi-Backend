@@ -129,6 +129,10 @@ async def gmail_webhook(
 
         mail_service.save_gmail(user.get("user_id"), latest_mail, session)
 
+        summary = EmailSummary_service.generate_mail_summary(latest_mail)
+
+        summary_in_db = EmailSummary_service.save_mail_summary(user.get("user_id"), latest_mail["id"], summary,  session)
+
         return {"success": True}
 
     except Exception as e:
@@ -173,7 +177,7 @@ async def get_user_gmail_messages(
     if not google_access_token:
         raise HTTPException(status_code=404, detail="No linked Google account found")
 
-    print(payload)
+    # print(payload)
     summaries = EmailSummary_service.list_summary_by_user_id(payload.user_id, session)
 
     # if not summaries:
@@ -181,6 +185,35 @@ async def get_user_gmail_messages(
 
     return {'data': summaries}
 
+
+
+@router.delete(
+    "/summary/{summary_id}",
+    # response_model = EmailSummariesPublic,
+    dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
+)
+async def delete_mail_summary(
+    summary_id: int,
+    session: SessionDep,
+    payload: TokenPayload = Depends(authx_security.access_token_required),
+):
+    summary_in_db = session.get(EmailSummary, summary_id)
+
+    if summary_in_db.user_id != payload.user_id:
+        raise HTTPException(status_code=400, detail="Does not have permission to delete mail summary!")
+
+    try:
+        session.delete(summary_in_db)
+        session.commit()
+    except Exception as e:
+        print("Delete error:", e)
+        session.rollback()
+        raise HTTPException(status_code=400, detail="Failed to delete email summary!")
+
+    return {
+        "message": "Email summary deleted successfully",
+        "deleted_id": summary_id
+    }
 
 
 async def event_generator():

@@ -11,6 +11,8 @@ class EmailSummaryBase(BaseModel):
 class EmailSummaryCreate(EmailSummaryBase):
     pass
 
+class EmailSummary(EmailSummaryBase):
+    pass
 
 class EmailSummaryPublic(EmailSummaryBase):
     id: int
