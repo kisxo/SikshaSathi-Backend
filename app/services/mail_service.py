@@ -2,8 +2,9 @@ import httpx
 from fastapi import HTTPException
 import base64
 from app.db.models import Email_model
-from sqlalchemy.orm import Session
+from app.db.session import SessionDep
 import json
+from sqlalchemy import select
 
 def fetch_gmail_message(access_token: str, message_id: str):
     """
@@ -117,7 +118,7 @@ def fetch_user_gmail_latest_message_id(access_token: str):
 
 
 
-def save_gmail(user_id: int, msg: dict, session: Session):
+def save_gmail(user_id: int, msg: dict, session: SessionDep):
     """
     Save a Gmail message to the database.
     `msg` should be a dict with keys: id, threadId, from, to, subject, date, body
@@ -141,3 +142,13 @@ def save_gmail(user_id: int, msg: dict, session: Session):
         session.rollback()
         print("Error saving email:", e)
         return None
+
+
+
+def get_email_by_message_id(message_id: str, session: SessionDep):
+    """
+    Fetch a single email by its unique message_id.
+    """
+    statement = select(Email_model.Email).where(Email_model.Email.message_id == message_id)
+    result = session.execute(statement).scalar_one_or_none()
+    return result

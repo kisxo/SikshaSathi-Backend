@@ -127,17 +127,23 @@ async def gmail_webhook(
         latest_mail = mail_service.fetch_gmail_message(access_token, latest_message_id)
         print("New emails fetched:", latest_mail)
 
+        mail_duplicate = mail_service.get_email_by_message_id(latest_message_id, session)
+        if mail_duplicate:
+            return {"success": True}
         mail_service.save_gmail(user.get("user_id"), latest_mail, session)
 
-        # summary = EmailSummary_service.generate_mail_summary(latest_mail, session)
-        #
-        # summary_in_db = EmailSummary_service.save_mail_summary(user.get("user_id"), latest_mail["id"], summary, session)
+        summary_duplicate = EmailSummary_service.get_summary_by_message_id(latest_message_id, session)
+        if summary_duplicate:
+            return {"success": True}
+        summary = EmailSummary_service.generate_mail_summary(latest_mail, session)
+
+        summary_in_db = EmailSummary_service.save_mail_summary(user.get("user_id"), latest_mail["id"], summary, session)
 
         return {"success": True}
 
     except Exception as e:
         print("Error in Gmail webhook:", e)
-        raise HTTPException(status_code=500, detail=f"Webhook processing failed: {e}")
+        raise HTTPException(status_code=200, detail=f"Webhook processing failed: {e}")
 
 
 

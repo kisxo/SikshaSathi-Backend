@@ -63,3 +63,14 @@ def save_mail_summary(user_id: int, message_id: str, summary: str, session: Sess
         raise HTTPException(status_code=400, detail="Something went wrong!")
 
     return new_email_summary
+
+
+
+def get_summary_by_message_id(message_id: str, session: SessionDep):
+    """
+    Fetch a single email by its unique message_id.
+    """
+    statement = select(email_summary_model.EmailSummary).where(email_summary_model.EmailSummary.message_id == message_id)
+    result = session.execute(statement).scalar_one_or_none()
+    return result
+
