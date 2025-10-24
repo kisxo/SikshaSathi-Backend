@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 
 class Email(Base):
@@ -13,4 +14,5 @@ class Email(Base):
     subject = Column(String, nullable=True)
     date = Column(String, nullable=True)
     body = Column(Text, nullable=True)
+    summary_generated: Mapped[bool] = mapped_column(Boolean, default=False)
     raw = Column(Text)  # full structured JSON

@@ -129,9 +129,9 @@ async def gmail_webhook(
 
         mail_service.save_gmail(user.get("user_id"), latest_mail, session)
 
-        summary = EmailSummary_service.generate_mail_summary(latest_mail, session)
-
-        summary_in_db = EmailSummary_service.save_mail_summary(user.get("user_id"), latest_mail["id"], summary, session)
+        # summary = EmailSummary_service.generate_mail_summary(latest_mail, session)
+        #
+        # summary_in_db = EmailSummary_service.save_mail_summary(user.get("user_id"), latest_mail["id"], summary, session)
 
         return {"success": True}
 
