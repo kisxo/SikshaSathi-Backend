@@ -8,6 +8,7 @@ from app.services import mail_service, user_service
 from app.db.models import goal_model
 from app.db.schemas.goal import GoalGenerationForm, GoalCreate
 from app.services import goal_service
+from app.services import profile_service
 
 from groq import Groq
 
@@ -26,39 +27,62 @@ async def generate_goal(
         session: SessionDep,
         payload: TokenPayload = Depends(authx_security.access_token_required),
 ):
-    data_format = '{"id":12,"title":"Prepare for CN Exam","description":"Focus on Unit 1–4 before midterm","target_date":"2025-11-15","status":"in_progress","priority":"high","progress":60,"todos":[{"id":101,"title":"Revise OSI Layers","status":"done","priority":"medium","checklists":[{"id":1001,"item":"Watch lecture","is_done":true},{"id":1002,"item":"Write summary notes","is_done":false}]},{"id":102,"title":"Practice previous papers","status":"todo","priority":"high","checklists":[{"id":1003,"item":"Attempt 2022 paper","is_done":false},{"id":1004,"item":"Attempt 2023 paper","is_done":false}]}]}'
+    data_format = '{"title":"Prepare for exam-name Exam","description":"Focus on Biology, Physics, and Chemistry for medical entrance","todos":[{"title":"Eligibility checklist","checklists":[{"item":"Check age eligibility","is_done":false},{"item":"Verify educational qualifications","is_done":false},{"item":"Ensure required documents","is_done":false}]},{"title":"Syllabus breakdown","checklists":[{"item":"Biology: Study cellular structure and functions","is_done":false},{"item":"Biology: Focus on genetics and evolution","is_done":false},{"item":"Physics: Understand mechanics and motion","is_done":false},{"item":"Physics: Study electromagnetism and optics","is_done":false},{"item":"Chemistry: Learn organic and inorganic chemistry","is_done":false},{"item":"Chemistry: Focus on physical chemistry and labs","is_done":false}]},{"title":"Daily/Weekly study plan","checklists":[{"item":"Study 4 hours daily, 5 days a week","is_done":false},{"item":"Practice 1 previous year paper weekly","is_done":false},{"item":"Review notes daily for 30 minutes","is_done":false}]},{"title":"Mock tests & evaluation","checklists":[{"item":"Take 1 mock test every 2 weeks","is_done":false},{"item":"Evaluate performance and identify weak areas","is_done":false},{"item":"Track progress and adjust study plan","is_done":false}]},{"title":"Revision & retention plan","checklists":[{"item":"Revise notes every 3 days","is_done":false},{"item":"Use flashcards for key terms","is_done":false},{"item":"Teach someone what you learned","is_done":false}]},{"title":"Resources","checklists":[{"item":"NCERT Biology, Physics, and Chemistry textbooks","is_done":false},{"item":"Online practice platforms like Unacademy, Vedantu","is_done":false},{"item":"Previous year papers and mock tests","is_done":false}]},{"title":"Final checklist before exam","checklists":[{"item":"Admit card and ID proof","is_done":false},{"item":"Stationery and water bottle","is_done":false},{"item":"Reach exam center 1 hour before","is_done":false}]}]}'
 
-    system_prompt = f"""
-        You are an assistant named ExamPlanner.
-        Task: Read the exam entries the user provides and produce a direct, goal, with todos and checklists for the requested exam, interview, study topic.
-        Constraints:
-        - Output ONLY the to-do list. Do not add introductions, labels, or commentary (no "Here is", "Summary:", or similar).
-        - Keep language very simple — a child should understand each item.
-        - Use the structure and fields present in the provided data (exam_eligibility, recomended_topics, exam_details, career_scope) as templates for building tasks.
-        - If the requested exam (e.g., NEET) is not present in the provided data, infer missing NEET-specific topics and steps using typical medical-entrance exam patterns, but keep the output concise and practical.
-        - Present tasks as short numbered steps and group them into clear sections (Eligibility checklist, Syllabus break-down, Daily/Weekly study plan, Mock tests & evaluation, Revision & retention, Resources, Final checklist).
-        - Include approximate timing for each major block (e.g., 2 weeks, 3 months) as simple suggestions.
-        - Only output in correct JSON data format, demo data {data_format}
-        - do not generate id
-        - generate a good title, description
+    system_prompt = """
+    You are an assistant named ExamPlanner.
+    Task: Read the exam name and produce exactly one JSON object (only JSON) that is a practical to-do list for the requested exam, interview, or study topic.
+    OUTPUT CONSTRAINT (mandatory):
+    - Return exactly one JSON object and nothing else. No leading/trailing text, no explanations, no markdown, no code fences, and no additional attachments.
+    SCHEMA & FIELD RULES (must follow exactly):
+    - Overall structure must follow the canonical fields: id, title, description, target_date, status, priority, progress, todos.
+    - Fields may be omitted only if explicitly allowed by the JSON Schema below.
+    - id fields: optional. If present, id must be either null or a non-numeric string. Do NOT generate numeric ids.
+    - title: required, string, concise and actionable. Max length 100 characters.
+    - description: required, string. Short summary only — do not include multi-paragraph instructions here.
+    - target_date: required, string in ISO format YYYY-MM-DD.
+    - status (top-level and per-todo): required; allowed values: "todo", "in_progress", "done", "blocked".
+    - priority (top-level and per-todo): required; allowed values: "low", "medium", "high".
+    - progress: required; integer 0..100. If feasible, compute progress as the percentage of top-level todos whose status == "done" (rounded to nearest integer). If not computed, provide a reasonable integer estimate.
+    - todos: required; array of todo objects ordered from highest priority/earliest to lowest.
+    - todo object required fields: title, status, priority, checklists.
+    - todo.id: optional; if present must be null or a non-numeric string.
+    - duration: optional; if present must follow "<number> <unit>" where unit ∈ days|weeks|months|years (e.g., "2 weeks").
+    - checklists: required; array of checklist objects.
+    - checklist object must include: item (string) and is_done (boolean). checklist.id is optional (null or non-numeric string) if present.
+    - Booleans must be literal true/false (no quotes).
+    - Do NOT add any fields beyond: id, title, description, target_date, status, priority, progress, todos, checklists, duration. (If you need to include resources or notes, add them as checklist items.)
+    - Arrays preserve order: earlier items = earlier/higher priority.
+    FORMAT & VALIDITY (must follow exactly):
+    - JSON must be valid and parseable: proper quoting, no trailing commas.
+    - Dates must match regex YYYY-MM-DD.
+    - Durations must match regex "^[0-9]+ (days|weeks|months|years)$".
+    - Titles must be ≤100 characters.
+    - If a required constraint cannot be met, output exactly one JSON object: {"error": "reason for failure"} (no other text).
+    LANGUAGE:
+    - Output language must be English.
+    BEHAVIOR FOR UNKNOWN/AMBIGUOUS EXAMS:
+    - If the exam name is ambiguous or not in typical examples, infer a short, realistic prep plan appropriate to the exam type (academic, government, professional). Do not ask clarifying questions.
+    ADDITIONAL NOTES FOR DEBUGGING:
+    - Keep each todo title short and actionable (example phrasing: "Read chapter 1 and make notes", "Attempt one mock test").
+    - Use checklist items for fine-grained steps.
+    - Generate large set up checklist for full coverage of topic
+    - Syllabus topics must have at least 10 checklists
+    - Progress computation is optional on the model side; server-side deterministic recomputation is recommended for production systems.
     """
 
+    user_data = profile_service.get_profile_by_user_id(payload.user_id, session)
     user_prompt = f"""
-        Use the exam entries below as reference examples. Now generate a to-do list for: NEET
-        Goal: Produce a simple, actionable to-do list for NEET exam preparation that a young student can follow. Start directly with the tasks — do NOT add any preamble or explanation. Use short, numbered items and grouped sections.
-        Output format hints (follow these, but keep output minimal):
-        1) Eligibility checklist:
-        1. ...
-        2) Syllabus breakdown:
-        1. Biology — short actionable tasks
-        2. Physics — ...
-        3) Daily / Weekly study plan (what to do each day/week)
-        4) Mock tests & evaluation (how often, what to track)
-        5) Revision & retention plan (spaced repetition schedule)
-        6) Resources (compact list: book names/online practice)
-        7) Final checklist before exam (documents, health, timing)
-
-        Now produce the to-do list.
+    Use the canonical example JSON and Schema above. Generate a to-do list for: exam-name= {input_data.exam_name} target-date= {input_data.target_date}
+    Goal: Produce a clear, actionable to-do list for {input_data.exam_name} preparation that a student can follow.
+    Requirements:
+    - Output exactly one JSON object (only JSON) that validates against the provided JSON Schema.
+    - Put short, actionable steps in todo titles and checklist items.
+    - Provide rough timing estimates using `duration` for major phases where appropriate.
+    - Do not include any paragraph text outside `description`.
+    - If you cannot comply, return {{ "error": "reason for failure" }} as the sole output.
+    
+    here are some user data so you tailor output based on this {user_data.__dict__}
     """
 
     chat_completion = client.chat.completions.create(
