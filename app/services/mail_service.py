@@ -138,5 +138,6 @@ def save_gmail(user_id: int, msg: dict, session: Session):
         session.commit()
         return gmail_msg.__dict__
     except Exception as e:
+        session.rollback()
         print("Error saving email:", e)
         return None
