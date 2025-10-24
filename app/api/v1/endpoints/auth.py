@@ -73,10 +73,9 @@ async def google_callback(
 
         # Your Android deep link (change scheme/host as needed)
         deep_link = (
-            f"sikshasathi://auth/callback?"
+            f"sikshasathi://"
             # f"email={google_user_info.get('email')}"
             # f"&name={google_user_info.get('name')}"
-            f"&status=success"
         )
 
         html_content = f"""
