@@ -160,7 +160,7 @@ async def get_user_gmail_messages(
 
 @router.get(
     "/summary",
-    response_model = EmailSummariesPublic,
+    # response_model = EmailSummariesPublic,
     dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
 )
 async def get_user_gmail_messages(
@@ -173,10 +173,11 @@ async def get_user_gmail_messages(
     if not google_access_token:
         raise HTTPException(status_code=404, detail="No linked Google account found")
 
+    print(payload)
     summaries = EmailSummary_service.list_summary_by_user_id(payload.user_id, session)
 
-    if not summaries:
-        raise HTTPException(status_code=404, detail="No email summaries found for this user")
+    # if not summaries:
+    #     raise HTTPException(status_code=404, detail="No email summaries found for this user")
 
     return {'data': summaries}
 

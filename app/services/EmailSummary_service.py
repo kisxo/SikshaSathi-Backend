@@ -6,8 +6,8 @@ from app.db.models.email_summary_model import EmailSummary
 
 def list_summary_by_user_id(user_id: int, session: SessionDep):
     try:
-        statement = select(EmailSummary)
-        result =  session.execute(statement).filter(EmailSummary.user_id == user_id).all()
+        statement = select(EmailSummary).where(EmailSummary.user_id == user_id)
+        result =  session.execute(statement).all()
         summary_list = []
         for row in result:
             summary_list.append(row.EmailSummary.__dict__)

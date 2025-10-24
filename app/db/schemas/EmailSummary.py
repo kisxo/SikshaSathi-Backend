@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 from datetime import datetime
-
+from typing import Optional
 
 class EmailSummaryBase(BaseModel):
     user_id: int
+    message_id: str
     summary: str
 
 
@@ -16,5 +17,5 @@ class EmailSummaryPublic(EmailSummaryBase):
     created_at: datetime
 
 
-class EmailSummariesPublic(EmailSummaryBase):
-    data: list[EmailSummaryPublic]
+class EmailSummariesPublic(BaseModel):
+    data: Optional[list[EmailSummaryPublic]]

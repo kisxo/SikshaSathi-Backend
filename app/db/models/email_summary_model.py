@@ -9,5 +9,6 @@ class EmailSummary(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    message_id = mapped_column(String, unique=True, index=True)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     created_date: Mapped[TIMESTAMP] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
