@@ -1,14 +1,14 @@
 from app.core.ai import AI_Client
 from app.db.session import SessionDep
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select,desc
 from app.db.models import email_summary_model
 from app.db.schemas.EmailSummary import EmailSummary
 from app.services import prompt_service
 
 def list_summary_by_user_id(user_id: int, session: SessionDep):
     try:
-        statement = select(email_summary_model.EmailSummary).where(email_summary_model.EmailSummary.user_id == user_id)
+        statement = select(email_summary_model.EmailSummary).where(email_summary_model.EmailSummary.user_id == user_id).order_by(desc(email_summary_model.EmailSummary.created_date))
         result =  session.execute(statement).all()
         summary_list = []
         for row in result:
