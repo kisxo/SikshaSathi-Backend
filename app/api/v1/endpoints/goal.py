@@ -72,6 +72,9 @@ async def generate_goal(
     """
 
     user_data = profile_service.get_profile_by_user_id(payload.user_id, session)
+    if user_data:
+        user_data = user_data.__dict__
+
     user_prompt = f"""
     Use the canonical example JSON and Schema above. Generate a to-do list for: exam-name= {input_data.exam_name} target-date= {input_data.target_date}
     Goal: Produce a clear, actionable to-do list for {input_data.exam_name} preparation that a student can follow.
@@ -82,7 +85,7 @@ async def generate_goal(
     - Do not include any paragraph text outside `description`.
     - If you cannot comply, return {{ "error": "reason for failure" }} as the sole output.
     
-    here are some user data so you tailor output based on this {user_data.__dict__}
+    here are some user data so you tailor output based on this {user_data}
     """
 
     chat_completion = client.chat.completions.create(
