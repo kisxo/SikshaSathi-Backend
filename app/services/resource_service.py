@@ -6,9 +6,9 @@ from pydantic import EmailStr
 from app.db.models.resources_model import Resource
 
 
-def list_user_resources(user_id: int, session: SessionDep):
+def list_user_resources(user_id: int, resource_type: str, session: SessionDep):
     try:
-        statement = select(Resource).where(Resource.user_id == user_id)
+        statement = select(Resource).where(Resource.user_id == user_id, Resource.resource_type == resource_type)
         result =  session.execute(statement).mappings().all()
         resources = []
         for row in result:
