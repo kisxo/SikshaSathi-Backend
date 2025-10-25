@@ -123,3 +123,68 @@ async def chat_with_ai(
         "query": input_data.query,
         "save_chat": False
     }
+
+
+@router.get("/",
+            dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
+            )
+async def get_ai_chats(
+        session: SessionDep,
+        payload: TokenPayload = Depends(authx_security.access_token_required),
+):
+    chats = chat_service.list_user_chats(payload.user_id, session=session)
+    if not chats:
+        # Return 404 if not found
+        raise HTTPException(status_code=404, detail="Chats not found")
+
+    return {'data': chats}
+
+
+@router.post("/public"
+             )
+async def chat_with_ai(
+        input_data: ChatForm,
+        session: SessionDep,
+):
+
+    system_prompt = f"""
+    You are Siksha Sathi AI, a smart study assistant. Your goal is to help the user (always referred to as 'You') plan, learn, and revise their study topics efficiently. Always break complex topics into simple, step-by-step explanations that a beginner can understand. Give study plans, summaries, examples, and exercises where appropriate. 
+
+    Contex / Data:
+    - Chat history for contex: {input_data.chat_history}
+
+    Guidelines:
+    - Always use simple, clear English.
+    - Always refer to the recipient as 'You'.
+    - Include actionable tips like "Read this first", "Then practice", "Revise daily".
+    - When providing multiple steps, number or bullet them clearly.
+    - Never include anything unrelated to studying or the topic.
+    - Always be encouraging and motivational.
+    - Do not use Markdown formatting.
+    """
+
+    chat_completion = AI_Client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": system_prompt,
+            },
+            {
+                "role": "user",
+                "content": input_data.query,
+            },
+        ],
+        model="llama-3.1-8b-instant",
+    )
+
+    history_list = input_data.chat_history.copy() if input_data.chat_history else []
+    history_list.append({
+        "system": chat_completion.choices[0].message.content,
+        "user": input_data.query
+    })
+
+    return {
+        "chat_history": history_list,
+        "query": input_data.query,
+        "save_chat": False
+    }
