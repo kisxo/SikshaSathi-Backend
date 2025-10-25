@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     GOOGLE_AUTH_PROVIDER_X509_CERT_URL: str
     GOOGLE_CLIENT_SECRET: str
     REDIRECT_URI: str
+    YT_API: str
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
