@@ -22,7 +22,7 @@ router = APIRouter()
     "/me",
     dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
 )
-async def get_user_gmail_messages(
+async def get_user_gmail_message_ids(
     session: SessionDep,
     max_results: int = Query(10, description="Number of emails to fetch"),
     payload: TokenPayload = Depends(authx_security.access_token_required),
@@ -60,7 +60,7 @@ async def get_user_gmail_messages(
     "/gmail/watch",
     dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
 )
-async def start_user_gmail_watch(
+async def start_user_gmail_watcher(
     session: SessionDep,
     payload = Depends(authx_security.access_token_required)
 ):
@@ -151,7 +151,7 @@ async def gmail_webhook(
     "/message/{message_id}",
     dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
 )
-async def get_user_gmail_messages(
+async def get_user_gmail_full_message(
     session: SessionDep,
     message_id: str,
     payload: TokenPayload = Depends(authx_security.access_token_required),
@@ -173,7 +173,7 @@ async def get_user_gmail_messages(
     # response_model = EmailSummariesPublic,
     dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
 )
-async def get_user_gmail_messages(
+async def get_user_gmail_summaries(
     session: SessionDep,
     payload: TokenPayload = Depends(authx_security.access_token_required),
 ):
