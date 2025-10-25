@@ -252,3 +252,32 @@ payload: TokenPayload = Depends(authx_security.access_token_required),
         raise HTTPException(status_code=400, detail="Something went wrong!")
 
     return book_data
+
+
+@router.delete(
+    "/{resources_id}",
+    # response_model = EmailSummariesPublic,
+    dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
+)
+async def delete_mail_summary(
+    resources_id: int,
+    session: SessionDep,
+    payload: TokenPayload = Depends(authx_security.access_token_required),
+):
+    resource_in_db = session.get(resources_model.Resource, resources_id)
+
+    if resource_in_db.user_id != payload.user_id:
+        raise HTTPException(status_code=400, detail="Does not have permission to delete mail resource!")
+
+    try:
+        session.delete(resource_in_db)
+        session.commit()
+    except Exception as e:
+        print("Delete error:", e)
+        session.rollback()
+        raise HTTPException(status_code=400, detail="Failed to delete email summary!")
+
+    return {
+        "message": "Resource deleted successfully",
+        "deleted_id": resources_id
+    }
