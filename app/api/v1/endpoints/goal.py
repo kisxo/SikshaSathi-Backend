@@ -130,7 +130,7 @@ async def generate_goal(
 @router.get("/my-goals",
     dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
 )
-async def generate_goal(
+async def get_goals(
         session: SessionDep,
         payload: TokenPayload = Depends(authx_security.access_token_required),
 ):
@@ -147,7 +147,7 @@ async def generate_goal(
 @router.get("/{goal_id}",
     dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
 )
-async def generate_goal(
+async def get_goal(
         goal_id: int,
         session: SessionDep,
         payload: TokenPayload = Depends(authx_security.access_token_required),
@@ -171,7 +171,7 @@ async def generate_goal(
     "/{goal_id}",
     dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
 )
-async def delete_mail_summary(
+async def delete_goal(
     goal_id: int,
     session: SessionDep,
     payload: TokenPayload = Depends(authx_security.access_token_required),

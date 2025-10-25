@@ -128,7 +128,7 @@ async def chat_with_ai(
 @router.get("/",
             dependencies=[Depends(authx_security.access_token_required), Depends(auth_scheme)],
             )
-async def get_ai_chats(
+async def get_ai_chats_history(
         session: SessionDep,
         payload: TokenPayload = Depends(authx_security.access_token_required),
 ):
@@ -142,7 +142,7 @@ async def get_ai_chats(
 
 @router.post("/public"
              )
-async def chat_with_ai(
+async def chat_with_public_ai(
         input_data: ChatForm,
         session: SessionDep,
 ):

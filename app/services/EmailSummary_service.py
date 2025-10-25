@@ -36,7 +36,7 @@ def generate_mail_summary(email: dict, session: SessionDep):
                 "content": input_prompt,
             },
         ],
-        model="llama-3.3-70b-versatile",
+        model="llama-3.1-8b-instant",
     )
 
     response = chat_completion.choices[0].message.content
