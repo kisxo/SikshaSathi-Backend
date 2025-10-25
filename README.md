@@ -1,33 +1,42 @@
-# Face Authentication based attendance System for Anganwadi Schools with FastAPI, OpenCV and React Native
+# AI-Powered Smart Education Platform
 
-This project implements a face authentication based attendance system and ration tracker using FastAPI for the web server, OpenCV for face recognition and React Native for native android application.
+This project is a **RAG and GEN-AI based education assistant system** designed to help students plan, learn, and track their progress in a unified digital platform.
 
-The system allows workers of a Anganwadi school to register their student details along with an clear image of their faces and use them for authentication.
+The system uses **Python FastAPI** to create REST APIs, **React Native** for the Android application, and **React** for the web application. It provides tools for systematic planning, resource generation, and progress tracking — all within a smart, mobile-first interface.
 
-The authentication process is based on comparing the live captured face with the previously registered ones.
+A notable feature includes **smart email summaries** generated via GEN-AI, keeping students informed without manual effort.
 
-#### Fastapi Backend https://github.com/kisxo/anganwadi
-#### Fastapi REST API Doc https://magicminute.online/api/docs
-#### React Native Application https://github.com/RahulSaikia-web/Anganwadi-app
-#### Application download link
-![Anganwadi](https://magicminute.online/anganwadi-qr.png)
+---
+
+## Project Links
+
+- **FastAPI Backend (GitHub)**: [SikshaSathi-Backend](https://github.com/kisxo/SikshaSathi-Backend)  
+- **FastAPI REST API Docs**: [sikshasathi.nebd.in/api/docs](https://sikshasathi.nebd.in/api/docs)  
+- **React Native Mobile App (GitHub)**: [SikshaSathi](https://github.com/Rauxo/SikshaSathi)  
+
+**App Download Preview:**  
+![SikshaSathi](https://sikshasathi.nebd.in/SikshaSathi.png)
+
+---
 
 ## Features
 
-- **User Registration**: Register a student or staff by generating a unique face signature from an image and store their details in the database.
-- **Face Authenticated Attendance**: Only Verify a student or staff by comparing the face with registered face signature from the database.
-- **FastAPI**: High-performance web framework for Python used to create this REST backend API.
-- **OpenCV**: Computer vision library used for face detection, recognition, comparison and generation of unique face signature for each person.
-- **React Native**: For seamless user experience even for a non-technical person.
-- **Postgresql**: To store the application data due to high flexibility and excellent su
+- **User Registration**: Students can register and store personal and academic details securely.  
+- **FastAPI Backend**: High-performance Python framework powering REST APIs.  
+- **React Native Mobile App**: Smooth and user-friendly mobile experience.  
+- **React Web App**: Interactive web interface for students.  
+- **PostgreSQL Database**: Robust and flexible storage for application data.  
+- **Automated Email Summaries**: Smart summaries delivered directly to users via email.  
+- **AI Assistance**: Uses **Groq-llama-3.1-8b-instant** for smart study guidance, video suggestions, and exam preparation tips.  
 
+---
 
-## key technologies used
+## Key Technologies
 
-- Fastapi ( python )
-- React Native ( javascript )
-- Open CV 
-- Postgresql 
-- Nginx
-- Linux VPS (Ubuntu)
-
+- **Backend:** FastAPI (Python)  
+- **Mobile App:** React Native (JavaScript)  
+- **Web App:** React (JavaScript)  
+- **AI Model:** Groq-llama-3.1-8b-instant  
+- **Email Integration:** Google Gmail API  
+- **Database:** PostgreSQL  
+- **Server & Deployment:** Nginx, Linux VPS (Ubuntu)  
